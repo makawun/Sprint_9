@@ -1,0 +1,21 @@
+services:
+  selenoid:
+    image: aerokube/selenoid:latest
+    environment:
+      - DOCKER_API_VERSION=1.40 
+    network_mode: bridge
+    volumes:
+      - "./browsers.json:/etc/selenoid/browsers.json"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    ports:
+      - "4444:4444"
+    command: ["-conf", "/etc/selenoid/browsers.json"]
+
+  tests:
+    build: .
+    depends_on:
+      - selenoid
+    environment:
+      - SELENOID_URL=http://selenoid:4444/wd/hub
+    volumes:
+      - "./allure-results:/app/allure-results"
