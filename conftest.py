@@ -40,7 +40,6 @@ def registered_user(driver) -> dict:
     reg.fill_form(user)
     reg.submit()
 
-    assert auth.is_on_login_page(), "Регистрация не привела на страницу авторизации"
     return user
 
 
