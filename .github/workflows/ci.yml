@@ -1,0 +1,56 @@
+name: Tests & Allure Report
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start Selenoid with Docker Compose
+        run: docker compose up -d selenoid
+
+      - name: Wait for Selenoid to be ready
+        run: |
+          for i in {1..10}; do
+            curl -s http://localhost:4444/status | grep -q '"ready":true' && break
+            echo "Waiting for Selenoid..."; sleep 3
+          done
+
+      - name: Pull Chrome image
+        run: docker pull selenoid/chrome:128.0
+
+      - name: Run tests
+        env:
+          SELENOID_URL: http://localhost:4444/wd/hub
+        run: pytest --alluredir=allure-results
+
+      - name: Generate Allure report
+        if: always()
+        uses: simple-elf/allure-report-action@v1.15
+        with:
+          allure_results: allure-results
+          allure_report: allure-report
+          gh_pages: gh-pages
+          allure_history: allure-history
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
